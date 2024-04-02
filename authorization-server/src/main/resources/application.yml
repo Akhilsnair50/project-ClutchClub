@@ -1,0 +1,22 @@
+server:
+    port: 9000
+
+logging:
+    level:
+        org.springframework.security: trace
+
+spring:
+    application:
+        name: authorization-server
+    datasource:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        password: 1234
+        url: jdbc:mysql://localhost:3307/userdb
+        username: root
+    jpa:
+        hibernate:
+            ddl-auto: update
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.MySQLDialect
+        show-sql: true

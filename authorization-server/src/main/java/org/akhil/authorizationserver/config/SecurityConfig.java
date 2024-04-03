@@ -14,10 +14,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -30,8 +29,9 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.UserDetailsManager;
+
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -40,7 +40,9 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -57,7 +59,7 @@ public class SecurityConfig {
             throws Exception {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
         http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-                .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
+                .oidc(Customizer.withDefaults());    // Enable OpenID Connect 1.0
         http
                 // Redirect to the login page when not authenticated from the
                 // authorization endpoint
@@ -83,7 +85,7 @@ public class SecurityConfig {
             throws Exception {
         http
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/css/**","/favicon/**","/error","/login","/auth/**")
+                        .requestMatchers("/css/**", "/favicon/**", "/error", "/login", "/auth/**")
                         .permitAll()
                         .anyRequest().authenticated()
                 )
@@ -93,7 +95,7 @@ public class SecurityConfig {
 //                        .loginPage("/login"));
                 .formLogin(Customizer.withDefaults())
 
-                .csrf(csrf->csrf.ignoringRequestMatchers("/auth/**"));
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/auth/**"));
         return http.build();
     }
 
@@ -120,11 +122,27 @@ public class SecurityConfig {
     }
 
     @Bean
-    public ClientSettings clientSettings(){
-        return ClientSettings.builder().requireProofKey(true).build();
+    public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
+        return context -> {
+            Authentication principal = context.getPrincipal();
+            if (context.getTokenType().getValue().equals("id_token")) {
+                context.getClaims().claim("token_type", "id_token");
+            }
+            if (context.getTokenType().getValue().equals("access_token")) {
+                context.getClaims().claim("token_type", "access_token");
+                Set<String> roles = principal.getAuthorities().stream().
+                        map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+                context.getClaims()
+                        .claim("roles",roles)
+                        .claim("username",principal.getName());
+            }
+        };
     }
 
-
+    @Bean
+    public ClientSettings clientSettings() {
+        return ClientSettings.builder().requireProofKey(true).build();
+    }
 
     @Bean
     public JWKSource<SecurityContext> jwkSource() {
@@ -145,8 +163,7 @@ public class SecurityConfig {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
             keyPairGenerator.initialize(2048);
             keyPair = keyPairGenerator.generateKeyPair();
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }
         return keyPair;

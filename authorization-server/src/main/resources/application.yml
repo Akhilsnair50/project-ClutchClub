@@ -6,6 +6,33 @@ logging:
         org.springframework.security: trace
 
 spring:
+    security:
+        oauth2:
+            client:
+                registration:
+                    my-client:
+                        provider: okta
+                        client-id: mvjyRx3DirJckJHJ0rMki7F7PMpAGPkF
+                        client-secret: EgIvqx3KfYzzwfoNXoYxhRf3sKbcNPQBzeAMNFaMKVB1jg5vxPm9EKV9Affh0kQb
+                        scope:
+                            - openid
+                            - profile
+                            - email
+                    google-idp:
+                        provider: google
+                        client-id: 551445460321-fd94dbpmsleullaor2863uqmoqfbi3ht.apps.googleusercontent.com
+                        client-secret: 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
+                        scope: openid, https://www.googleapis.com/auth/userinfo.profile, https://www.googleapis.com/auth/userinfo.email
+                        client-name: clutchclubgoogle
+                provider:
+                    okta:
+                        authorization-uri: ${okta.base-url}/authorize
+                        token-uri: ${okta.base-url}/oauth/token
+                        user-info-uri: ${okta.base-url}/userinfo
+                        jwk-set-uri: https://dev-qqxdffj45wxsjcmj.us.auth0.com/.well-known/jwks.json
+                        user-name-attribute: sub
+                    google:
+                        user-name-attribute: email
     application:
         name: authorization-server
     datasource:
@@ -20,3 +47,7 @@ spring:
             hibernate:
                 dialect: org.hibernate.dialect.MySQLDialect
         show-sql: true
+okta:
+    base-url: https://dev-qqxdffj45wxsjcmj.us.auth0.com
+
+

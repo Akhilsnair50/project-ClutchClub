@@ -7,6 +7,9 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.akhil.authorizationserver.federated.FederatedIdentityAuthenticationSuccessHandler;
+import org.akhil.authorizationserver.federated.UserRepositoryOAuth2UserHandler;
+import org.akhil.authorizationserver.repository.GoogleUserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -14,11 +17,16 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -30,17 +38,23 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -50,6 +64,8 @@ public class SecurityConfig {
 
 
     private final PasswordEncoder passwordEncoder;
+    private final GoogleUserRepository googleUserRepository;
+
 
     @Bean
     @Order(1)
@@ -62,9 +78,6 @@ public class SecurityConfig {
                 // Redirect to the login page when not authenticated from the
                 // authorization endpoint
                 .exceptionHandling((exceptions) -> exceptions
-                        .authenticationEntryPoint(
-                                new LoginUrlAuthenticationEntryPoint("/login")
-                        )
                         .defaultAuthenticationEntryPointFor(
                                 new LoginUrlAuthenticationEntryPoint("/login"),
                                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
@@ -82,20 +95,40 @@ public class SecurityConfig {
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
             throws Exception {
         http
+
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/css/**","/favicon/**","/error","/login","/auth/**")
                         .permitAll()
                         .anyRequest().authenticated()
                 )
                 // Form login handles the redirect to the login page from the
-                // authorization server filter chain
-//                .formLogin(form -> form
-//                        .loginPage("/login"));
+
+                /*.formLogin(Customizer.withDefaults())
+
+                .oauth2Login(oauth2Login ->
+                        oauth2Login
+                                .loginPage(Customizer.withDefaults())
+                                .successHandler(authenticationSuccessHandler())
+                )*/
                 .formLogin(Customizer.withDefaults())
+                .oauth2Login(oauth2login -> oauth2login
+                        .successHandler(oauth2AuthenticationSuccessHandler())
+                        )
 
                 .csrf(csrf->csrf.ignoringRequestMatchers("/auth/**"));
         return http.build();
     }
+
+    private AuthenticationSuccessHandler authenticationSuccessHandler() {
+        return new FederatedIdentityAuthenticationSuccessHandler();
+    }
+    @Bean
+    public FederatedIdentityAuthenticationSuccessHandler oauth2AuthenticationSuccessHandler() {
+        FederatedIdentityAuthenticationSuccessHandler successHandler = new FederatedIdentityAuthenticationSuccessHandler();
+        successHandler.setOAuth2UserHandler(new UserRepositoryOAuth2UserHandler(googleUserRepository));
+        return successHandler;
+    }
+
 
 
     @Bean
@@ -117,6 +150,23 @@ public class SecurityConfig {
                 .build();
 
         return new InMemoryRegisteredClientRepository(oidcClient);
+    }
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
+        return context -> {
+            Authentication principal = context.getPrincipal();
+            if (context.getTokenType().getValue().equals("id_token")) {
+                context.getClaims().claim("token_type", "id_token");
+            }
+            if (context.getTokenType().getValue().equals("access_token")) {
+                context.getClaims().claim("token_type", "access_token");
+                Set<String> roles = principal.getAuthorities().stream().
+                        map(GrantedAuthority::getAuthority).collect(Collectors.toSet());
+                context.getClaims()
+                        .claim("roles",roles)
+                        .claim("username",principal.getName());
+            }
+        };
     }
 
     @Bean
@@ -160,5 +210,14 @@ public class SecurityConfig {
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder().issuer("http://localhost:9000").build();
+    }
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 }

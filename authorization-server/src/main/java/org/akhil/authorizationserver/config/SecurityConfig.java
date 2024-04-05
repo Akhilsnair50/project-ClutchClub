@@ -71,6 +71,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
             throws Exception {
+        http.cors(Customizer.withDefaults());
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
         http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
                 .oidc(Customizer.withDefaults());	// Enable OpenID Connect 1.0
@@ -95,9 +96,10 @@ public class SecurityConfig {
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
             throws Exception {
         http
+                .cors(Customizer.withDefaults())
 
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/css/**","/favicon/**","/error","/login","/auth/**")
+                        .requestMatchers("/fonts/**","/images/**","/vendor/**","/css/**","/js/**","/favicon/**","/error","/login","/auth/**")
                         .permitAll()
                         .anyRequest().authenticated()
                 )
@@ -110,8 +112,9 @@ public class SecurityConfig {
                                 .loginPage(Customizer.withDefaults())
                                 .successHandler(authenticationSuccessHandler())
                 )*/
-                .formLogin(Customizer.withDefaults())
+                .formLogin(login->login.loginPage("/login"))
                 .oauth2Login(oauth2login -> oauth2login
+                                .loginPage("/login")
                         .successHandler(oauth2AuthenticationSuccessHandler())
                         )
 
@@ -142,7 +145,8 @@ public class SecurityConfig {
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                 .authorizationGrantType(AuthorizationGrantType.JWT_BEARER)
-                .redirectUri("https://oauthdebugger.com/debug")
+//                .redirectUri("https://oauthdebugger.com/debug")
+                .redirectUri("http://localhost:4200/authorized")
                 .postLogoutRedirectUri("http://127.0.0.1:8080/")
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)

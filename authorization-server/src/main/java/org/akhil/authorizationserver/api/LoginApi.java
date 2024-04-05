@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class LoginApi {
     @GetMapping("/login")
     public String login() {
-        return "login";
+        return "login1";
     }
 }

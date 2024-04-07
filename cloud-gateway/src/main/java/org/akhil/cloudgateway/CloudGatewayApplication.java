@@ -5,9 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+
 
 @SpringBootApplication
 public class CloudGatewayApplication {
@@ -42,16 +40,5 @@ public class CloudGatewayApplication {
 
     }
 
-//    @Bean
-//    SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity){
-//        httpSecurity
-//                .authorizeExchange((authorize)->authorize
-//                        .anyExchange().authenticated())
-////                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-//                .cors(ServerHttpSecurity.CorsSpec::disable)
-//                .oauth2Login(Customizer.withDefaults())
-//                .oauth2Client(Customizer.withDefaults());
-//
-//        return httpSecurity.build();
-//    }
+
 }

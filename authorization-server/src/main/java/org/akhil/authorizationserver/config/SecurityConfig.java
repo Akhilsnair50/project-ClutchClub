@@ -21,12 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -40,10 +35,7 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -103,15 +95,7 @@ public class SecurityConfig {
                         .permitAll()
                         .anyRequest().authenticated()
                 )
-                // Form login handles the redirect to the login page from the
 
-                /*.formLogin(Customizer.withDefaults())
-
-                .oauth2Login(oauth2Login ->
-                        oauth2Login
-                                .loginPage(Customizer.withDefaults())
-                                .successHandler(authenticationSuccessHandler())
-                )*/
                 .formLogin(login->login.loginPage("/login"))
                 .oauth2Login(oauth2login -> oauth2login
                                 .loginPage("/login")
@@ -122,9 +106,9 @@ public class SecurityConfig {
         return http.build();
     }
 
-    private AuthenticationSuccessHandler authenticationSuccessHandler() {
+ /*   private AuthenticationSuccessHandler authenticationSuccessHandler() {
         return new FederatedIdentityAuthenticationSuccessHandler();
-    }
+    }*/
     @Bean
     public FederatedIdentityAuthenticationSuccessHandler oauth2AuthenticationSuccessHandler() {
         FederatedIdentityAuthenticationSuccessHandler successHandler = new FederatedIdentityAuthenticationSuccessHandler();

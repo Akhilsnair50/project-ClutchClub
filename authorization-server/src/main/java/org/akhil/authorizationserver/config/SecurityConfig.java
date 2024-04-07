@@ -118,7 +118,7 @@ public class SecurityConfig {
                         .successHandler(oauth2AuthenticationSuccessHandler())
                         )
 
-                .csrf(csrf->csrf.ignoringRequestMatchers("/auth/**"));
+                .csrf(csrf->csrf.ignoringRequestMatchers("/auth/**","/login"));
         return http.build();
     }
 
@@ -147,14 +147,57 @@ public class SecurityConfig {
                 .authorizationGrantType(AuthorizationGrantType.JWT_BEARER)
 //                .redirectUri("https://oauthdebugger.com/debug")
                 .redirectUri("http://localhost:4200/authorized")
+//                .redirectUri("http://localhost:7080/bff/login/oauth2/code/akhil")
                 .postLogoutRedirectUri("http://127.0.0.1:8080/")
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
                 .clientSettings(clientSettings())
                 .build();
 
-        return new InMemoryRegisteredClientRepository(oidcClient);
+        RegisteredClient gatewayClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("gateway")
+                .clientSecret(passwordEncoder.encode("secret"))
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .authorizationGrantType(AuthorizationGrantType.JWT_BEARER)
+                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/gateway")
+                .postLogoutRedirectUri("http://127.0.0.1:8080/logged-out")
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.PROFILE)
+                .clientSettings(clientSettingsWithoutPKCE())
+                .build();
+
+        RegisteredClient gatewayClient2 = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("client")
+                .clientSecret(passwordEncoder.encode("secret"))
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .authorizationGrantType(AuthorizationGrantType.JWT_BEARER)
+                .redirectUri("http://127.0.0.1:8082/login/oauth2/code/spring")
+                .postLogoutRedirectUri("http://127.0.0.1:8082/")
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.PROFILE)
+                .clientSettings(clientSettingsWithoutPKCE())
+                .build();
+        return new InMemoryRegisteredClientRepository(oidcClient,gatewayClient,gatewayClient2);
     }
+
+    @Bean
+    public ClientSettings clientSettings(){
+        return ClientSettings.builder().requireProofKey(true).build();
+    }
+
+    @Bean
+    public ClientSettings clientSettingsWithoutPKCE(){
+        return ClientSettings.builder().requireProofKey(false).build();
+    }
+
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
         return context -> {
@@ -173,10 +216,6 @@ public class SecurityConfig {
         };
     }
 
-    @Bean
-    public ClientSettings clientSettings(){
-        return ClientSettings.builder().requireProofKey(true).build();
-    }
 
 
 

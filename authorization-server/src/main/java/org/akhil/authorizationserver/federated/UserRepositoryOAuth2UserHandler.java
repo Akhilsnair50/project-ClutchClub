@@ -2,7 +2,9 @@ package org.akhil.authorizationserver.federated;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.akhil.authorizationserver.model.AppUser;
 import org.akhil.authorizationserver.model.GoogleUser;
+import org.akhil.authorizationserver.repository.AppUserRepo;
 import org.akhil.authorizationserver.repository.GoogleUserRepository;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
@@ -13,15 +15,26 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public final class UserRepositoryOAuth2UserHandler implements Consumer<OAuth2User> {
 
+/*
     private final GoogleUserRepository googleUserRepository;
+*/
+
+    private final AppUserRepo appUserRepo;
 
     @Override
     public void accept(OAuth2User user) {
         // Capture user in a local data store on first authentication
-        if (!this.googleUserRepository.findByEmail(user.getName()).isPresent()) {
+      /*  if (!this.googleUserRepository.findByEmail(user.getName()).isPresent()) {
             GoogleUser googleUser = GoogleUser.fromOauth2User(user);
             log.info(googleUser.toString());
             this.googleUserRepository.save(googleUser);
+        } else {
+            log.info("username :  {}", user.getAttributes().get("given_name"));
+        }*/
+        if (!this.appUserRepo.findByEmail(user.getName()).isPresent()) {
+            AppUser googleUser = AppUser.fromOauth2User(user);
+            log.info(googleUser.toString());
+            this.appUserRepo.save(googleUser);
         } else {
             log.info("username :  {}", user.getAttributes().get("given_name"));
         }

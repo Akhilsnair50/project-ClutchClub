@@ -1,12 +1,11 @@
-package org.akhil.authorizationserver.model;
+package org.akhil.userservice.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.akhil.authorizationserver.enums.AuthenticationType;
-import org.springframework.security.core.Authentication;
+import org.akhil.userservice.enums.AuthenticationType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;

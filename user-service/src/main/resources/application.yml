@@ -8,6 +8,18 @@ spring:
             resourceserver:
                 jwt:
                     issuer-uri : http://localhost:9000
+    datasource:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        password: 1234
+        url: jdbc:mysql://localhost:3307/userdb
+        username: root
+    jpa:
+        hibernate:
+            ddl-auto: update
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.MySQLDialect
+        show-sql: true
 eureka:
     instance:
         preferIpAddress: true

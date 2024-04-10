@@ -1,4 +1,4 @@
-package org.akhil.authorizationserver.service;
+package org.akhil.authorizationserver.service.user.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

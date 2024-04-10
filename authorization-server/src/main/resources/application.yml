@@ -4,6 +4,7 @@ server:
 logging:
     level:
         org.springframework.security: trace
+        org.springframework.mail: trace
 
 spring:
     security:
@@ -47,6 +48,19 @@ spring:
             hibernate:
                 dialect: org.hibernate.dialect.MySQLDialect
         show-sql: true
+    mail:
+        host: smtp.gmail.com
+        port: 465
+        username: akhilsnair50@gmail.com
+        password: sgsajmhwhkrvlymq
+        protocol: smtp
+        properties.mail.smtp:
+            auth: true
+            starttls.enable: true
+            ssl:
+                enable: true
+
+
 okta:
     base-url: https://dev-qqxdffj45wxsjcmj.us.auth0.com
 

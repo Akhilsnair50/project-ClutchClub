@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.akhil.authorizationserver.federated.FederatedIdentityAuthenticationSuccessHandler;
 import org.akhil.authorizationserver.federated.UserRepositoryOAuth2UserHandler;
+import org.akhil.authorizationserver.repository.AppUserRepo;
 import org.akhil.authorizationserver.repository.GoogleUserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -56,7 +57,8 @@ public class SecurityConfig {
 
 
     private final PasswordEncoder passwordEncoder;
-    private final GoogleUserRepository googleUserRepository;
+
+    private final AppUserRepo appUserRepo;
 
 
     @Bean
@@ -91,7 +93,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
 
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/fonts/**","/images/**","/vendor/**","/css/**","/js/**","/favicon/**","/error","/login","/auth/**")
+                        .requestMatchers("/confirm-account/**","/register","/fonts/**","/images/**","/vendor/**","/css/**","/js/**","/favicon/**","/error","/login","/auth/**")
                         .permitAll()
                         .anyRequest().authenticated()
                 )
@@ -112,7 +114,7 @@ public class SecurityConfig {
     @Bean
     public FederatedIdentityAuthenticationSuccessHandler oauth2AuthenticationSuccessHandler() {
         FederatedIdentityAuthenticationSuccessHandler successHandler = new FederatedIdentityAuthenticationSuccessHandler();
-        successHandler.setOAuth2UserHandler(new UserRepositoryOAuth2UserHandler(googleUserRepository));
+        successHandler.setOAuth2UserHandler(new UserRepositoryOAuth2UserHandler(appUserRepo));
         return successHandler;
     }
 
@@ -179,7 +181,7 @@ public class SecurityConfig {
 
     @Bean
     public ClientSettings clientSettingsWithoutPKCE(){
-        return ClientSettings.builder().requireProofKey(false).build();
+        return ClientSettings.builder().requireProofKey(false).requireAuthorizationConsent(true).build();
     }
 
     @Bean

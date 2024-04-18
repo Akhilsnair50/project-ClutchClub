@@ -1,37 +1,10 @@
-
 spring:
+    profiles:
+        active: "prod"
     application:
-        name: user-service
-
-    security:
-        oauth2:
-            resourceserver:
-                jwt:
-                    issuer-uri : http://localhost:9000
-    datasource:
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        password: 1234
-        url: jdbc:mysql://localhost:3307/userdb
-        username: root
-    jpa:
-        hibernate:
-            ddl-auto: update
-        properties:
-            hibernate:
-                dialect: org.hibernate.dialect.MySQLDialect
-        show-sql: true
-eureka:
-    instance:
-        preferIpAddress: true
-    client:
-        fetchRegistry: true
-        registerWithEureka: true
-        serviceUrl:
-            defaultZone: http://localhost:8072/eureka/
+        name: "user-service"
+    config:
+        import: "optional:configserver:http://localhost:8071/"
 
 server:
     port: 8083
-
-logging:
-    level:
-        org.springframework.security: trace

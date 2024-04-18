@@ -31,8 +31,11 @@ public class CloudGatewayApplication {
                         .path(apiPrefix+"resource/"+"**")
                         .filters(f->f
                                 .tokenRelay()
-                                .rewritePath(apiPrefix+"(?<segment>.*)","/$\\{segment}"))
-                        .uri("http://localhost:8083"))
+                                .rewritePath(apiPrefix+"(?<segment>.*)","/$\\{segment}")
+                           )
+
+                        .uri("http://localhost:8083")
+                        )
                 .route(route->route
                         .path("/**")
                         .uri("http://localhost:4200"))

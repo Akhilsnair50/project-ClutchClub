@@ -1,5 +1,7 @@
 package org.akhil.authorizationserver.service.user.impl;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.akhil.authorizationserver.dto.CreateAppUserDto;
@@ -79,18 +81,22 @@ public class UserServiceImpl implements UserService {
                 .authenticationType(AuthenticationType.valueOf("LOCAL"))
                 .build();
         Set<Role> roles = new HashSet<>();
-
-        log.info("roles : {}", userDto.roles().toString());
-
-
-        userDto.roles().forEach(r -> {
-            Role role = roleRepository.findByRole(RoleName.valueOf(r))
-                    .orElseThrow(() -> new RuntimeException("role not found"));
-
-            log.info("The role inside createUserDto is {}", RoleName.valueOf(r));
-
+        if (userDto.roles()== null){
+            Role role = roleRepository.findByRole(RoleName.ROLE_USER).orElseThrow(()->new RuntimeException("role not found"));
             roles.add(role);
-        });
+        }
+        else {
+            userDto.roles().forEach(r -> {
+                Role role = roleRepository.findByRole(RoleName.valueOf(r))
+                        .orElseThrow(() -> new RuntimeException("role not found"));
+
+                log.info("The role inside createUserDto is {}", RoleName.valueOf(r));
+
+                roles.add(role);
+            });
+        }
+
+//        log.info("roles : {}", userDto.roles().toString());
 
         user.setRoles(roles);
 
@@ -127,15 +133,47 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    public ResponseEntity<?> sendMailTest(){
-        SimpleMailMessage mailMessage = new SimpleMailMessage();
-        mailMessage.setTo("akhilsnair500@gmail.com");
-        mailMessage.setFrom("clutchclub@app.com");
-        mailMessage.setSubject("Complete Registration!");
-        mailMessage.setText("To confirm your account, please click here : "
-                + "http://localhost:9000/confirm-account?token=" );
-        emailService.sendEmail(mailMessage);
+    public String forgotPassword(String email ){
+        AppUser user = userRepository.findByEmail(email).orElseThrow(
+                ()-> new RuntimeException("user with email not found: "+email)
+        );
+        try {
+            resetPasswordEmail(email);
+        } catch (MessagingException e) {
+            throw new RuntimeException("unable to send reset password to this mail: "+email);
+        }
+        return "Please check your email for resetting the password ";
+    }
 
-        return new ResponseEntity<>(mailMessage, HttpStatus.OK);
+    public String setPassword(String email,String confirmationToken,String newPassword){
+        AppUser user = userRepository.findByEmail(email).orElseThrow(
+                ()-> new RuntimeException("user with email not found: "+email)
+        );
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        return "new password set successfully";
+    }
+
+    public void resetPasswordEmail(String email) throws MessagingException {
+
+        AppUser user = userRepository.findByEmail(email).orElseThrow(
+                ()-> new RuntimeException("user with email not found: "+email)
+        );
+
+        ConfirmationToken confirmationToken = new ConfirmationToken(user);
+
+        confirmationTokenRepository.save(confirmationToken);
+
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(user.getEmail());
+        mailMessage.setFrom("clutchclub@app.com");
+        mailMessage.setSubject("Reset password");
+       /* mailMessage.setText("To reset password , please click here : "
+                + "http://localhost:9000/set-password?email=%s".formatted(email) );
+        emailService.sendEmail(mailMessage);*/
+        mailMessage.setText("To reset your password, please click here : "
+                + "http://localhost:9000/auth/set-password?token=" + confirmationToken.getConfirmationToken()+"?email="+email);
+
+        emailService.sendEmail(mailMessage);
     }
 }

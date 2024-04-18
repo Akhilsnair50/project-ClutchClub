@@ -47,6 +47,9 @@ public class AppUser implements UserDetails {
 
     private boolean disabled = false;
 
+    @OneToOne(mappedBy = "user")
+    private ForgotPassword forgotPassword;
+
 
     /**
      * Returns the authorities granted to the user. Cannot return null.

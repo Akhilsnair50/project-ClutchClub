@@ -93,7 +93,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
 
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/confirm-account/**","/register","/fonts/**","/images/**","/vendor/**","/css/**","/js/**","/favicon/**","/error","/login","/auth/**")
+                        .requestMatchers( "/forgotPassword/**","/confirm-account/**","/register",
+                                "/fonts/**","/images/**","/vendor/**","/css/**","/js/**",
+                                "/favicon/**","/error","/login","/auth/**")
                         .permitAll()
                         .anyRequest().authenticated()
                 )
@@ -108,16 +110,12 @@ public class SecurityConfig {
         return http.build();
     }
 
- /*   private AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return new FederatedIdentityAuthenticationSuccessHandler();
-    }*/
     @Bean
     public FederatedIdentityAuthenticationSuccessHandler oauth2AuthenticationSuccessHandler() {
         FederatedIdentityAuthenticationSuccessHandler successHandler = new FederatedIdentityAuthenticationSuccessHandler();
         successHandler.setOAuth2UserHandler(new UserRepositoryOAuth2UserHandler(appUserRepo));
         return successHandler;
     }
-
 
 
     @Bean

@@ -40,9 +40,18 @@ public class AuthApi {
     public ResponseEntity<?> confirmUserAccount(@RequestParam("token")String confirmationToken) {
         return userService.confirmEmail(confirmationToken);
     }
-    @PostMapping("/testMail")
-    public ResponseEntity<?> testMail(){
-        return userService.sendMailTest();
+
+
+    @PutMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestParam String email){
+        return new ResponseEntity<>(userService.forgotPassword(email),HttpStatus.OK);
     }
+
+    @PutMapping("/set-password")
+    public ResponseEntity<String> setPassword(@RequestParam("email") String email,@RequestParam("token") String confirmationToken,@RequestHeader String newPassword){
+        return new ResponseEntity<>(userService.setPassword(email,confirmationToken,newPassword),HttpStatus.OK);
+    }
+
+
 
 }
